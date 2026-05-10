@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Intelligence — Análise de Carteiras</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060608;
+  --surface: #0C0C12;
+  --surface2: #111118;
+  --border: #1A1A28;
+  --border2: #252535;
+  --text: #E8E8F0;
+  --text2: #7878A0;
+  --text3: #3A3A55;
+  --gold: #C8A84A;
+  --gold2: #6A4E10;
+  --green: #2DD4A0;
+  --green2: #0A3028;
+  --red: #F05050;
+  --red2: #380F0F;
+  --yellow: #F0C040;
+  --yellow2: #382800;
+  --blue: #5A8EF0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 48px;
+  height: 64px;
+  background: rgba(6,6,8,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 4px;
+  color: var(--gold);
+}
+
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 2px;
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── MAIN LAYOUT ── */
+main {
+  position: relative;
+  z-index: 1;
+  padding-top: 64px;
+  min-height: 100vh;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 80px 48px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-eyebrow {
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-eyebrow::after {
+  content: '';
+  width: 60px; height: 1px;
+  background: var(--gold2);
+}
+
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(56px, 8vw, 110px);
+  line-height: 0.88;
+  letter-spacing: 1px;
+  margin-bottom: 32px;
+}
+
+.hero-title .accent { color: var(--gold); }
+
+.hero-sub {
+  font-family: 'Crimson Pro', serif;
+  font-size: 18px;
+  color: var(--text2);
+  font-style: italic;
+  max-width: 480px;
+  line-height: 1.7;
+  margin-bottom: 48px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.hero-stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.hero-stat-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text3);
+}
+
+/* ── UPLOAD ZONE ── */
+.upload-section {
+  padding: 0 48px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.section-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 40px;
+  color: var(--border2);
+  line-height: 1;
+}
+
+.section-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--text);
+}
+
+.section-line {
+  flex: 1; height: 1px;
+  background: var(--border2);
+}
+
+.upload-zone {
+  border: 1px dashed var(--border2);
+  background: var(--surface);
+  padding: 64px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(200,168,74,0.04) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.upload-zone:hover::before,
+.upload-zone.drag-over::before { opacity: 1; }
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--gold2);
+  background: var(--surface2);
+}
+
+.upload-icon {
+  font-size: 40px;
+  margin-bottom: 20px;
+  opacity: 0.4;
+}
+
+.upload-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.upload-sub {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 10px 28px;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.upload-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+.upload-format {
+  margin-top: 20px;
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 1px;
+}
+
+/* ── SINGLE CNPJ ── */
+.single-section {
+  padding: 0 48px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--text3);
+  text-transform: uppercase;
+}
+
+.input-field {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.input-field:focus { border-color: var(--gold); }
+.input-field::placeholder { color: var(--text3); }
+
+.analyze-btn {
+  padding: 12px 24px;
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.analyze-btn:hover { background: #E0BC5A; }
+.analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── PROGRESS ── */
+.progress-section {
+  padding: 0 48px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: none;
+}
+
+.progress-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 32px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.progress-title {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text2);
+  text-transform: uppercase;
+}
+
+.progress-pct {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--gold);
+}
+
+.progress-track {
+  height: 2px;
+  background: var(--border2);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--green));
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+.progress-log {
+  font-size: 10px;
+  color: var(--text3);
+  line-height: 1.8;
+}
+
+/* ── RESULTS ── */
+.results-section {
+  padding: 0 48px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: none;
+}
+
+.sumario-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border2);
+  border: 1px solid var(--border2);
+  margin-bottom: 32px;
+}
+
+.sumario-card {
+  background: var(--surface);
+  padding: 24px 20px;
+}
+
+.sumario-label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.sumario-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.sumario-sub { font-size: 9px; color: var(--text3); }
+
+.green { color: var(--green); }
+.gold { color: var(--gold); }
+.red { color: var(--red); }
+.blue { color: var(--blue); }
+.yellow { color: var(--yellow); }
+
+/* ── RESULT CARD (single) ── */
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 28px 32px;
+  margin-bottom: 16px;
+}
+
+.result-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.result-company {
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.result-cnpj {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+}
+
+.score-display {
+  text-align: right;
+}
+
+.score-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 1px;
+}
+
+.result-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metric-item {}
+.metric-name { font-size: 8px; letter-spacing: 1px; color: var(--text3); margin-bottom: 6px; }
+.metric-value { font-size: 14px; font-weight: 500; color: var(--text); }
+
+.rec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 500;
+}
+
+.rec-badge.prioridade { background: var(--green2); color: var(--green); border: 1px solid var(--green); }
+.rec-badge.monitorar { background: var(--yellow2); color: var(--yellow); border: 1px solid var(--yellow); }
+.rec-badge.risco { background: var(--red2); color: var(--red); border: 1px solid var(--red); }
+
+.score-bar-mini {
+  height: 2px;
+  background: var(--border2);
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+.score-bar-mini-fill {
+  height: 100%;
+  transition: width 1s ease 0.3s;
+}
+
+/* ── DOWNLOAD BTN ── */
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.download-btn:hover {
+  background: var(--green);
+  color: var(--bg);
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  padding: 14px 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  font-size: 11px;
+  color: var(--text2);
+  z-index: 1000;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s;
+  max-width: 320px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { border-color: var(--red); color: var(--red); }
+.toast.success { border-color: var(--green); color: var(--green); }
+
+/* ── LOADING SPINNER ── */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav, .hero, .upload-section, .single-section, .progress-section, .results-section {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .input-row { grid-template-columns: 1fr; }
+  .sumario-grid { grid-template-columns: 1fr 1fr; }
+  .result-metrics { grid-template-columns: 1fr 1fr; }
+  .hero-stats { gap: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">Credit Intelligence</div>
+  <div class="nav-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">VERIFICANDO API...</span>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Plataforma de análise com IA</div>
+    <h1 class="hero-title">
+      ANÁLISE<br>
+      DE <span class="accent">CARTEIRA</span><br>
+      NPL
+    </h1>
+    <p class="hero-sub">
+      Score de recuperabilidade por devedor. Enriquecimento automático via Receita Federal e CNJ. Relatório em minutos.
+    </p>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-value gold">6</div>
+        <div class="hero-stat-label">Variáveis de score</div>
+      </div>
+      <div>
+        <div class="hero-stat-value green">8</div>
+        <div class="hero-stat-label">Tribunais consultados</div>
+      </div>
+      <div>
+        <div class="hero-stat-value">48h</div>
+        <div class="hero-stat-label">Tempo médio manual</div>
+      </div>
+      <div>
+        <div class="hero-stat-value gold">&lt;5min</div>
+        <div class="hero-stat-label">Com este sistema</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- UPLOAD CARTEIRA -->
+  <section class="upload-section">
+    <div class="section-rule">
+      <div class="section-num">01</div>
+      <div class="section-title">Analisar Carteira Completa</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">⬆</div>
+      <div class="upload-title">Arraste seu arquivo aqui</div>
+      <div class="upload-sub">ou clique para selecionar</div>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+        Selecionar arquivo
+      </button>
+      <div class="upload-format">Formatos aceitos: .xlsx · .xls · .csv</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
+    </div>
+
+    <div style="margin-top: 16px; font-size: 10px; color: var(--text3); line-height: 1.8;">
+      Colunas necessárias: <span style="color:var(--text2)">documento</span> · 
+      <span style="color:var(--text2)">valor_face</span> · 
+      <span style="color:var(--text2)">tipo_credito</span> · 
+      <span style="color:var(--text2)">meses_inadimplencia</span>
+    </div>
+  </section>
+
+  <!-- ANÁLISE RÁPIDA -->
+  <section class="single-section">
+    <div class="section-rule">
+      <div class="section-num">02</div>
+      <div class="section-title">Análise Rápida — 1 CNPJ</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">CNPJ ou CPF</label>
+        <input class="input-field" id="inputDoc" placeholder="00.000.000/0001-00" type="text">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Valor de face (R$)</label>
+        <input class="input-field" id="inputValor" placeholder="150000" type="number">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Tipo de crédito</label>
+        <select class="input-field" id="inputTipo">
+          <option value="empresarial">Empresarial</option>
+          <option value="pessoal">Pessoal</option>
+          <option value="consignado">Consignado</option>
+          <option value="garantia">Com Garantia</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Meses inadimplente</label>
+        <input class="input-field" id="inputMeses" placeholder="18" type="number">
+      </div>
+      <button class="analyze-btn" id="analyzeBtn" onclick="analisarDocumento()">
+        ANALISAR
+      </button>
+    </div>
+  </section>
+
+  <!-- PROGRESSO -->
+  <section class="progress-section" id="progressSection">
+    <div class="section-rule">
+      <div class="section-num">03</div>
+      <div class="section-title">Processando</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-header">
+        <div class="progress-title">ENRIQUECIMENTO EM ANDAMENTO</div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-log" id="progressLog">
+        Iniciando processamento...
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section class="results-section" id="resultsSection">
+    <div class="section-rule">
+      <div class="section-num">04</div>
+      <div class="section-title">Resultado da Análise</div>
+      <div class="section-line"></div>
+    </div>
+
+    <button class="download-btn" id="downloadBtn" style="display:none" onclick="baixarResultado()">
+      <span>⬇</span> BAIXAR EXCEL COMPLETO
+    </button>
+
+    <div class="sumario-grid" id="sumarioGrid" style="display:none"></div>
+    <div id="resultCards"></div>
+  </section>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const API = 'https://web-production-c99d91.up.railway.app';
+let currentJobId = null;
+let pollInterval = null;
+
+// ── HEALTH CHECK ──
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    const d = await r.json();
+    if (d.status === 'ok') {
+      document.getElementById('statusDot').style.background = 'var(--green)';
+      document.getElementById('statusText').textContent = 'API ONLINE';
+    }
+  } catch {
+    document.getElementById('statusDot').style.background = 'var(--red)';
+    document.getElementById('statusText').textContent = 'API OFFLINE';
+  }
+}
+
+checkHealth();
+setInterval(checkHealth, 30000);
+
+// ── TOAST ──
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 4000);
+}
+
+// ── DRAG & DROP ──
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadCarteira(file);
+});
+
+function handleFileSelect(input) {
+  if (input.files[0]) uploadCarteira(input.files[0]);
+}
+
+// ── UPLOAD CARTEIRA ──
+async function uploadCarteira(file) {
+  showToast(`Enviando ${file.name}...`);
+
+  const form = new FormData();
+  form.append('file', file);
+
+  try {
+    const r = await fetch(`${API}/analisar`, { method: 'POST', body: form });
+    const d = await r.json();
+
+    if (d.job_id) {
+      currentJobId = d.job_id;
+      mostrarProgresso();
+      pollStatus(d.job_id);
+      showToast('Carteira recebida. Processando...', 'success');
+    } else {
+      showToast('Erro ao enviar carteira', 'error');
+    }
+  } catch (e) {
+    showToast('Erro de conexão com a API', 'error');
+  }
+}
+
+// ── PROGRESSO ──
+function mostrarProgresso() {
+  document.getElementById('progressSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('progressSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function pollStatus(jobId) {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    try {
+      const r = await fetch(`${API}/status/${jobId}`);
+      const d = await r.json();
+
+      const [proc, total] = (d.progresso || '0/0').split('/').map(Number);
+      const pct = total > 0 ? Math.round((proc / total) * 100) : 0;
+
+      document.getElementById('progressFill').style.width = `${pct}%`;
+      document.getElementById('progressPct').textContent = `${pct}%`;
+      document.getElementById('progressLog').innerHTML =
+        `Status: <span style="color:var(--text2)">${d.status}</span><br>` +
+        `Processados: <span style="color:var(--gold)">${proc} de ${total}</span> devedores`;
+
+      if (d.status === 'concluido') {
+        clearInterval(pollInterval);
+        exibirSumario(d.sumario, jobId);
+        showToast('Análise concluída!', 'success');
+      } else if (d.status === 'erro') {
+        clearInterval(pollInterval);
+        showToast(`Erro: ${d.erro}`, 'error');
+      }
+    } catch {}
+  }, 3000);
+}
+
+// ── SUMÁRIO ──
+function exibirSumario(s, jobId) {
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+
+  // Download btn
+  document.getElementById('downloadBtn').style.display = 'flex';
+
+  // Sumário
+  const grid = document.getElementById('sumarioGrid');
+  grid.style.display = 'grid';
+  const rec = s.recuperacao_estimada || 0;
+  const taxa = s.taxa_recuperacao_media || 0;
+  grid.innerHTML = `
+    <div class="sumario-card">
+      <div class="sumario-label">Valor de Face</div>
+      <div class="sumario-value gold">R$ ${fmt(s.valor_total)}</div>
+      <div class="sumario-sub">${s.total_devedores} devedores</div>
+    </div>
+    <div class="sumario-card">
+      <div class="sumario-label">Recuperação Estimada</div>
+      <div class="sumario-value green">R$ ${fmt(rec)}</div>
+      <div class="sumario-sub">${taxa}% da carteira</div>
+    </div>
+    <div class="sumario-card">
+      <div class="sumario-label">Score Médio</div>
+      <div class="sumario-value gold">${s.score_medio}/1000</div>
+      <div class="sumario-sub">Qualidade da carteira</div>
+    </div>
+    <div class="sumario-card">
+      <div class="sumario-label">Distribuição</div>
+      <div class="sumario-value" style="font-size:18px; line-height:1.6">
+        <span class="green">${s.prioridade} PRIOR</span><br>
+        <span class="yellow">${s.monitorar} MON</span><br>
+        <span class="red">${s.risco_alto} RISCO</span>
+      </div>
+    </div>
+  `;
+}
+
+function fmt(n) {
+  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ── DOWNLOAD ──
+async function baixarResultado() {
+  if (!currentJobId) return;
+  window.open(`${API}/resultado/${currentJobId}`, '_blank');
+}
+
+// ── ANÁLISE RÁPIDA ──
+async function analisarDocumento() {
+  const doc = document.getElementById('inputDoc').value.trim();
+  if (!doc) { showToast('Informe um CNPJ ou CPF', 'error'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const r = await fetch(`${API}/analisar-documento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        documento: doc,
+        valor_face: Number(document.getElementById('inputValor').value) || 0,
+        tipo_credito: document.getElementById('inputTipo').value,
+        meses_inadimplencia: Number(document.getElementById('inputMeses').value) || 12,
+      })
+    });
+
+    const d = await r.json();
+    renderResultCard(d);
+
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    showToast('Análise concluída!', 'success');
+
+  } catch (e) {
+    showToast('Erro na análise. Verifique a conexão.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ANALISAR';
+  }
+}
+
+// ── RENDER CARD ──
+function renderResultCard(d) {
+  const score = d.score_recuperacao || 0;
+  const cls = d.classificacao_score || '';
+  const rec = d.recomendacao || '';
+
+  let scoreColor = 'var(--red)';
+  let badgeClass = 'risco';
+  if (cls === 'ALTO') { scoreColor = 'var(--green)'; badgeClass = 'prioridade'; }
+  else if (cls === 'MÉDIO') { scoreColor = 'var(--yellow)'; badgeClass = 'monitorar'; }
+
+  const container = document.getElementById('resultCards');
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  card.style.borderLeft = `3px solid ${scoreColor}`;
+  card.style.animation = 'fadeIn 0.4s ease';
+
+  card.innerHTML = `
+    <div class="result-card-header">
+      <div>
+        <div class="result-company">${d.razao_social || d.cnpj || d.documento || '—'}</div>
+        <div class="result-cnpj">${d.cnpj || ''} · ${d.tipo_doc || ''} · ${d.uf || ''}</div>
+      </div>
+      <div class="score-display">
+        <div class="score-number" style="color:${scoreColor}">${score}</div>
+        <div class="score-label">/ 1000 pts</div>
+      </div>
+    </div>
+    <div class="result-metrics">
+      <div class="metric-item">
+        <div class="metric-name">SITUAÇÃO</div>
+        <div class="metric-value" style="color:${d.situacao_ativa ? 'var(--green)' : 'var(--red)'}">${d.situacao_cadastral || '—'}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-name">PROCESSOS</div>
+        <div class="metric-value">${d.total_processos ?? '—'}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-name">RECUPERAÇÃO EST.</div>
+        <div class="metric-value" style="color:var(--gold)">${d.taxa_recuperacao_estimada_pct || 0}%</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-name">RISCO PROCESSUAL</div>
+        <div class="metric-value">${d.risco_processual || '—'}</div>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px">
+      <span class="rec-badge ${badgeClass}">${rec}</span>
+      <span style="font-size:9px; color:var(--text3)">${d.detalhes_score || ''}</span>
+    </div>
+    <div class="score-bar-mini">
+      <div class="score-bar-mini-fill" style="width:${score/10}%; background:${scoreColor}"></div>
+    </div>
+  `;
+
+  container.prepend(card);
+}
+
+// Fade in animation
+const style = document.createElement('style');
+style.textContent = `@keyframes fadeIn { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
