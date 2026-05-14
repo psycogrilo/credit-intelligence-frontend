@@ -636,9 +636,9 @@ main {
       <div class="upload-icon">⬆</div>
       <div class="upload-title">Arraste seu arquivo aqui</div>
       <div class="upload-sub">ou clique para selecionar</div>
-      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+      <label for="fileInput" class="upload-btn" style="cursor:pointer">
         Selecionar arquivo
-      </button>
+      </label>
       <div class="upload-format">Formatos aceitos: .xlsx · .xls · .csv</div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
     </div>
