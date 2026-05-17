@@ -632,16 +632,16 @@ main {
       <div class="section-line"></div>
     </div>
 
-    <div class="upload-zone" id="uploadZone">
+    <label class="upload-zone" id="uploadZone" for="fileInput" style="display:block; cursor:pointer">
       <div class="upload-icon">⬆</div>
       <div class="upload-title">Arraste seu arquivo aqui</div>
       <div class="upload-sub">ou clique para selecionar</div>
-      <label for="fileInput" class="upload-btn" style="cursor:pointer">
+      <span class="upload-btn" style="display:inline-block; pointer-events:none">
         Selecionar arquivo
-      </label>
+      </span>
       <div class="upload-format">Formatos aceitos: .xlsx · .xls · .csv</div>
-      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
-    </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="position:absolute;width:1px;height:1px;opacity:0" onchange="handleFileSelect(this)">
+    </label>
 
     <div style="margin-top: 16px; font-size: 10px; color: var(--text3); line-height: 1.8;">
       Colunas necessárias: <span style="color:var(--text2)">documento</span> · 
