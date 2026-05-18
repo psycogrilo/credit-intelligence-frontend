@@ -716,9 +716,14 @@ main {
       <div class="section-line"></div>
     </div>
 
-    <button class="download-btn" id="downloadBtn" style="display:none" onclick="baixarResultado()">
-      <span>⬇</span> BAIXAR EXCEL COMPLETO
-    </button>
+    <div style="display:none; gap:12px; flex-wrap:wrap; margin-bottom:32px" id="actionBtns">
+      <button class="download-btn" id="downloadBtn" onclick="baixarResultado()" style="margin-bottom:0">
+        <span>⬇</span> BAIXAR EXCEL
+      </button>
+      <button class="download-btn" id="reportBtn" onclick="abrirRelatorio()" style="margin-bottom:0; border-color:var(--gold); color:var(--gold)">
+        <span>📄</span> VER RELATÓRIO HTML
+      </button>
+    </div>
 
     <div class="sumario-grid" id="sumarioGrid" style="display:none"></div>
     <div id="resultCards"></div>
@@ -841,7 +846,7 @@ function exibirSumario(s, jobId) {
   document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
 
   // Download btn
-  document.getElementById('downloadBtn').style.display = 'flex';
+  document.getElementById('actionBtns').style.display = 'flex';
 
   // Sumário
   const grid = document.getElementById('sumarioGrid');
@@ -880,6 +885,11 @@ function fmt(n) {
 }
 
 // ── DOWNLOAD ──
+function abrirRelatorio() {
+  if (!currentJobId) return;
+  window.open(`${API}/relatorio/${currentJobId}`, '_blank');
+}
+
 async function baixarResultado() {
   if (!currentJobId) return;
   window.open(`${API}/resultado/${currentJobId}`, '_blank');
