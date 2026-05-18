@@ -737,6 +737,7 @@ main {
 <script>
 // ── CONFIG ──
 const API = 'https://web-production-c99d91.up.railway.app';
+const API_KEY = 'ci-2026-ricardo-secret-key';
 let currentJobId = null;
 let pollInterval = null;
 
@@ -789,7 +790,7 @@ async function uploadCarteira(file) {
   form.append('file', file);
 
   try {
-    const r = await fetch(`${API}/analisar`, { method: 'POST', body: form });
+    const r = await fetch(`${API}/analisar`, { method: 'POST', body: form, headers: { 'x-api-key': API_KEY } });
     const d = await r.json();
 
     if (d.job_id) {
@@ -887,7 +888,8 @@ function fmt(n) {
 // ── DOWNLOAD ──
 function abrirRelatorio() {
   if (!currentJobId) return;
-  window.open(`${API}/relatorio/${currentJobId}`, '_blank');
+  const cliente = document.getElementById('inputCliente')?.value || '';
+  window.open(`${API}/relatorio/${currentJobId}?cliente=${encodeURIComponent(cliente)}`, '_blank');
 }
 
 async function baixarResultado() {
@@ -907,7 +909,7 @@ async function analisarDocumento() {
   try {
     const r = await fetch(`${API}/analisar-documento`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
       body: JSON.stringify({
         documento: doc,
         valor_face: Number(document.getElementById('inputValor').value) || 0,
